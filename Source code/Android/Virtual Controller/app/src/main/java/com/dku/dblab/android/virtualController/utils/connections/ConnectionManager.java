@@ -28,50 +28,37 @@ public class ConnectionManager {
 
     private KeyManager keyManager = new KeyManager();
 
-    public void dispose()
-    {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try { os.close(); } catch (Exception e) { }
-                try { socket.close(); } catch (Exception e) { }
-                try { serverSocket.close(); } catch (Exception e) { }
-            }
-        });
+    public void dispose() throws IOException {
+        if (os != null) {
+            os.write(new byte[] { (byte)KeyState.Close.ordinal(), 0 });
 
-        t.start();
-        try { t.join(); } catch (Exception e) { }
+            os.close();
+            os = null;
+        }
+
+        if (socket != null) {
+            socket.close();
+            socket = null;
+        }
+
+        if (serverSocket != null) {
+            serverSocket.close();
+            serverSocket = null;
+        }
     }
 
-    public void startUSBConnection()
-    {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    serverSocket = new ServerSocket(serverPort);
-                    socket = serverSocket.accept();
-                    socket.setSendBufferSize(10240);
-                    os = socket.getOutputStream();
-                } catch (Exception e) {
-
-                }
-            }
-        }).start();
+    public void startUSBConnection() throws IOException {
+        serverSocket = new ServerSocket(serverPort);
+        socket = serverSocket.accept();
+        socket.setSendBufferSize(10240);
+        os = socket.getOutputStream();
     }
 
-    public void startWiFiConnection(String ipAddresses)
-    {
-        final Scanner sc = new Scanner(ipAddresses);
+    public void startWiFiConnection(String ipAddresses) throws IOException {
+        Scanner sc = new Scanner(ipAddresses);
 
         while(sc.hasNextLine()) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try { validate(new Socket(sc.nextLine(), clientPort)); }
-                    catch (Exception e) { }
-                }
-            }).start();
+            validate(new Socket(sc.nextLine(), clientPort));
         }
 
         sc.close();
@@ -108,58 +95,23 @@ public class ConnectionManager {
             }
             catch (Exception e)
             {
-                try { soc.close(); soc = null; }
-                catch (Exception ex) { }
-
                 e.printStackTrace();
             }
+
+            try { soc.close(); soc = null; }
+            catch (Exception ex) { }
         }
-
-        try { soc.close(); soc = null; }
-        catch (Exception ex) { }
     }
 
-    private void sendKey(final KeyCode keyCode, final KeyState keyState)
-    {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try
-                {
-                    if (!keyManager.getKeyState(keyCode).equals(keyState))
-                    {
-                        keyManager.setKeyState(keyCode, keyState);
-                        os.write(new byte[] { (byte)keyState.ordinal(), (byte)keyCode.ordinal() });
-                    }
-                }
-                catch (Exception e)
-                {
-                    try { socket.close(); socket = null; }
-                    catch (Exception ex) { }
-                }
-            }
-        }).start();
+    private void sendKey(final KeyCode keyCode, final KeyState keyState) throws IOException {
+        if (!keyManager.getKeyState(keyCode).equals(keyState))
+        {
+            keyManager.setKeyState(keyCode, keyState);
+            os.write(new byte[] { (byte)keyState.ordinal(), (byte)keyCode.ordinal() });
+        }
     }
 
-    private void sendKeyDown(KeyCode keyCode)
-    {
-        sendKey(keyCode, KeyState.Down);
-    }
-
-    private void sendKeyUp(KeyCode keyCode)
-    {
-        sendKey(keyCode, KeyState.Up);
-    }
-
-    private void sendKey(String keyName, KeyState keyState) {
+    public void sendKey(String keyName, KeyState keyState) throws IOException {
         sendKey(keyManager.getKeyCode(keyName), keyState);
-    }
-
-    public void sendKeyDown(String keyName) {
-        sendKey(keyName, KeyState.Down);
-    }
-
-    public void sendKeyUp(String keyName) {
-        sendKey(keyName, KeyState.Up);
     }
 }

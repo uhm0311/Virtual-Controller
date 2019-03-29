@@ -11,6 +11,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.text.format.Formatter;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -24,10 +25,14 @@ import com.MobileAnarchy.Android.Widgets.Joystick.JoystickMovedListener;
 import com.MobileAnarchy.Android.Widgets.Joystick.JoystickView;
 import com.dku.dblab.android.virtualController.utils.connections.ConnectionManager;
 import com.dku.dblab.android.virtualController.utils.QRCodeReader;
+import com.dku.dblab.android.virtualController.utils.connections.ParameterizedRunnable;
+import com.dku.dblab.android.virtualController.utils.keys.KeyState;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity 
 {
@@ -62,6 +67,10 @@ public class MainActivity extends Activity
 	private double heightRatio;
 
 	private ConnectionManager connectionManager = new ConnectionManager();
+	private ExecutorService threadPool = Executors.newCachedThreadPool();
+
+	private Runnable startUSBConnection, closeConnection;
+	private ParameterizedRunnable startWiFiConnection, sendKey;
 
 	@SuppressWarnings("deprecation")
 	@SuppressLint("NewApi")
@@ -73,19 +82,53 @@ public class MainActivity extends Activity
 		setTheme(android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+		DisplayMetrics displayInfo = new DisplayMetrics();
+		MainActivity.this.getWindowManager().getDefaultDisplay().getMetrics(displayInfo);
+
+		widthRatio = (double)displayInfo.widthPixels / (double)originalWidth;
+		heightRatio = (double)displayInfo.heightPixels / (double)originalHeight;
+
+		initViews();
+		initRunnables();
+
+		showConnectionDialog();
+	}
+
+	private void initViews() {
 		layout = (RelativeLayout) findViewById(R.id.main_layout);
-		
+
 		final int sdk = android.os.Build.VERSION.SDK_INT;
-		if(sdk < android.os.Build.VERSION_CODES.JELLY_BEAN) 
-		    layout.setBackgroundDrawable(getResources().getDrawable(R.drawable.control) );
+		if(sdk < android.os.Build.VERSION_CODES.JELLY_BEAN)
+			layout.setBackgroundDrawable(getResources().getDrawable(R.drawable.control) );
 		else layout.setBackground(getResources().getDrawable(R.drawable.control));
-		
-        DisplayMetrics displayInfo = new DisplayMetrics();
-        MainActivity.this.getWindowManager().getDefaultDisplay().getMetrics(displayInfo);
 
-        widthRatio = (double)displayInfo.widthPixels / (double)originalWidth;
-        heightRatio = (double)displayInfo.heightPixels / (double)originalHeight;
+		for (final String viewName : originalViewRects.keySet())
+		{
+			if (!viewName.equals("Joystick"))
+				addView(setOnButtonTouchListener(new Button(this), viewName), viewName);
+		}
+		addView(setOnJoystickMovedListener(new JoystickView(this)), "Joystick");
+	}
 
+	private void initRunnables() {
+		startUSBConnection = new Runnable() {
+			@Override
+			public void run() {
+				try { connectionManager.startUSBConnection(); }
+				catch (Exception e) { e.printStackTrace(); }
+			}
+		};
+
+		closeConnection = new Runnable() {
+			@Override
+			public void run() {
+				try { connectionManager.dispose(); }
+				catch (Exception e) { e.printStackTrace(); }
+			}
+		};
+	}
+
+	private void showConnectionDialog() {
 		final String[] connections = { "USB", "WI-FI" };
 		new AlertDialog.Builder(this).setTitle("Select Your Connection Type").setSingleChoiceItems(connections, -1, new DialogInterface.OnClickListener()
 		{
@@ -95,18 +138,18 @@ public class MainActivity extends Activity
 
 				if (item == 1)
 				{
-					new IntentIntegrator(MainActivity.this).initiateScan();
+					startQRCodeReader();
 				}
 				else
 				{
 					new AlertDialog.Builder(MainActivity.this).setTitle("USB Connection").setMessage("Ready to connect?").setCancelable(false)
-					.setPositiveButton("확인", new DialogInterface.OnClickListener()
-					{
-						public void onClick(DialogInterface dialog, int whichButton)
-						{
-							connectionManager.startUSBConnection();
-						}
-					}).setNegativeButton("취소", new DialogInterface.OnClickListener()
+							.setPositiveButton("확인", new DialogInterface.OnClickListener()
+							{
+								public void onClick(DialogInterface dialog, int whichButton)
+								{
+									startUSBConnection();
+								}
+							}).setNegativeButton("취소", new DialogInterface.OnClickListener()
 					{
 						public void onClick(DialogInterface dialog, int whichButton)
 						{
@@ -117,18 +160,59 @@ public class MainActivity extends Activity
 				dialog.cancel();
 			}
 		}).create().show();
-
-        for (final String viewName : originalViewRects.keySet())
-        {
-        	if (!viewName.equals("Joystick"))
-	            addView(setOnButtonTouchListener(new Button(this), viewName), viewName);
-        }
-		addView(setOnJoystickMovedListener(new JoystickView(this)), "Joystick");
 	}
+
+	private void startQRCodeReader() {
+		new IntentIntegrator(MainActivity.this).initiateScan();
+	}
+
+	private void startUSBConnection() {
+		threadPool.execute(startUSBConnection);
+	}
+
+	private void startWiFiConnection(String ipAddresses) {
+		startWiFiConnection = new ParameterizedRunnable(ipAddresses) {
+			@Override
+			public void run() {
+				try { connectionManager.startWiFiConnection(parameter.toString()); }
+				catch (Exception e) { e.printStackTrace(); }
+			}
+		};
+
+		threadPool.execute(startWiFiConnection);
+	}
+
+	private void closeConnection() {
+		threadPool.execute(closeConnection);
+	}
+
+	private void sendKey(String keyName, KeyState keyState) {
+		sendKey = new ParameterizedRunnable(new Object[] { keyName, keyState }) {
+			@Override
+			public void run() {
+				Object[] params = (Object[])parameter;
+
+				try { connectionManager.sendKey(params[0].toString(), (KeyState)params[1]); }
+				catch (Exception e) { e.printStackTrace(); }
+			}
+		};
+
+		threadPool.execute(sendKey);
+	}
+
+	private void sendKeyUp(String keyName) {
+		sendKey(keyName, KeyState.Up);
+	}
+
+	private void sendKeyDown(String keyName) {
+		sendKey(keyName, KeyState.Down);
+	}
+
     @Override
     public void onDestroy()
     {
-		connectionManager.dispose();
+		closeConnection();
+
         super.onDestroy();
     }
 
@@ -142,7 +226,7 @@ public class MainActivity extends Activity
 			int ip = wifiInfo.getIpAddress();
 
 			QRCodeReader qrReader = new QRCodeReader(result, Formatter.formatIpAddress(ip));
-			connectionManager.startWiFiConnection(qrReader.toString());
+			startWiFiConnection(qrReader.toString());
 		}
 	}
 
@@ -154,11 +238,11 @@ public class MainActivity extends Activity
 				public boolean onTouch(View v, MotionEvent event) {
 					switch (event.getAction()) {
 						case MotionEvent.ACTION_DOWN:
-							connectionManager.sendKeyDown(viewName);
+							sendKeyDown(viewName);
 							break;
 
 						case MotionEvent.ACTION_UP:
-							connectionManager.sendKeyUp(viewName);
+							sendKeyUp(viewName);
 							break;
 					}
 
@@ -181,38 +265,38 @@ public class MainActivity extends Activity
 				//pan = y, tilt = x
 				if (pan >= 8)
 				{
-					connectionManager.sendKeyDown("Up");
+					sendKeyDown("Up");
 				}
 				else if (pan <= -8)
 				{
-					connectionManager.sendKeyDown("Down");
+					sendKeyDown("Down");
 				}
 				else
 				{
-					connectionManager.sendKeyUp("Up");
-					connectionManager.sendKeyUp("Down");
+					sendKeyUp("Up");
+					sendKeyUp("Down");
 				}
 
 				if (tilt >= 8)
 				{
-					connectionManager.sendKeyDown("Right");
+					sendKeyDown("Right");
 				}
 				else if (tilt <= -8)
 				{
-					connectionManager.sendKeyDown("Left");
+					sendKeyDown("Left");
 				}
 				else
 				{
-					connectionManager.sendKeyUp("Right");
-					connectionManager.sendKeyUp("Left");
+					sendKeyUp("Right");
+					sendKeyUp("Left");
 				}
 			}
 			public void OnReleased()
 			{
-				connectionManager.sendKeyUp("Up");
-				connectionManager.sendKeyUp("Down");
-				connectionManager.sendKeyUp("Right");
-				connectionManager.sendKeyUp("Left");
+				sendKeyUp("Up");
+				sendKeyUp("Down");
+				sendKeyUp("Right");
+				sendKeyUp("Left");
 			}
 		});
 

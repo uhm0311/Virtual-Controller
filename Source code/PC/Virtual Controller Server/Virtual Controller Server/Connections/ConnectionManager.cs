@@ -242,66 +242,25 @@ namespace VirtualController.Connections
                     this.isUSBConnection[i] = isUSB;
                     client.ReceiveBufferSize = 10240;
 
-                    if (isUSB) {
-                        switch (i)
-                        {
-                            case 1:
-                                receiveThread[1] = new Thread(new ThreadStart(receiveP1));
-                                receiveThread[1].Start();
-                                break;
-                            case 2:
-                                receiveThread[2] = new Thread(new ThreadStart(receiveP2));
-                                receiveThread[2].Start();
-                                break;
-                            case 3:
-                                receiveThread[3] = new Thread(new ThreadStart(receiveP3));
-                                receiveThread[3].Start();
-                                break;
-                            case 4:
-                                receiveThread[4] = new Thread(new ThreadStart(receiveP4));
-                                receiveThread[4].Start();
-                                break;
-                        }
-
-                    } else
+                    if (isUSB) 
                     {
-                        switch (i)
-                        {
-                            case 1: new Thread(new ThreadStart(validateP1)).Start(); break;
-                            case 2: new Thread(new ThreadStart(validateP2)).Start(); break;
-                            case 3: new Thread(new ThreadStart(validateP3)).Start(); break;
-                            case 4: new Thread(new ThreadStart(validateP4)).Start(); break;
-                        }
+                        receiveThread[i] = new Thread(new ParameterizedThreadStart(receive));
+                        receiveThread[i].Start(i);
                     }
+                    else new Thread(new ParameterizedThreadStart(validate)).Start(i);
+
                     return;
                 }
             }
+
             client.Close();
             client = null;
         }
 
-        private void validateP1()
+        private void validate(object parameter)
         {
-            validate(1);
-        }
+            int player = (int)parameter;
 
-        private void validateP2()
-        {
-            validate(2);
-        }
-
-        private void validateP3()
-        {
-            validate(3);
-        }
-
-        private void validateP4()
-        {
-            validate(4);
-        }
-
-        private void validate(int player)
-        {
             using (NetworkStream stream = new NetworkStream(clients[player]))
             {
                 using (StreamReader reader = new StreamReader(stream, ByteConverter.EUCKR))
@@ -323,25 +282,8 @@ namespace VirtualController.Connections
 
                                 if (reader.ReadLine().Trim().ToUpper().Equals("GOOD."))
                                 {
-                                    switch (player)
-                                    {
-                                        case 1:
-                                            receiveThread[1] = new Thread(new ThreadStart(receiveP1));
-                                            receiveThread[1].Start();
-                                            break;
-                                        case 2:
-                                            receiveThread[2] = new Thread(new ThreadStart(receiveP2));
-                                            receiveThread[2].Start();
-                                            break;
-                                        case 3:
-                                            receiveThread[3] = new Thread(new ThreadStart(receiveP3));
-                                            receiveThread[3].Start();
-                                            break;
-                                        case 4:
-                                            receiveThread[4] = new Thread(new ThreadStart(receiveP4));
-                                            receiveThread[4].Start();
-                                            break;
-                                    }
+                                    receiveThread[player] = new Thread(new ParameterizedThreadStart(receive));
+                                    receiveThread[player].Start(player);
                                 }
                                 else removeClient(clients[player]);
                             }
@@ -353,28 +295,9 @@ namespace VirtualController.Connections
             }
         }
 
-        private void receiveP1()
+        private void receive(object parameter)
         {
-            receive(1);
-        }
-
-        private void receiveP2()
-        {
-            receive(2);
-        }
-
-        private void receiveP3()
-        {
-            receive(3);
-        }
-
-        private void receiveP4()
-        {
-            receive(4);
-        }
-
-        private void receive(int player)
-        {
+            int player = (int)parameter;
             byte[] buffer = new byte[2];
 
             uint dwFlags;
@@ -386,23 +309,27 @@ namespace VirtualController.Connections
 
                 try
                 {
-                    clients[player].Receive(buffer, 2, SocketFlags.None);
-                    dwFlags = buffer[0];
-                    scanCode = keyConfigDialog.getScanCode(player, buffer[1]);
-                    keyCode = keyConfigDialog.getVirtualKey(player, buffer[1]);
+                    if (clients[player].Connected)
+                    {
+                        clients[player].Receive(buffer, 2, SocketFlags.None);
 
-                    if ((int)scanCode > 128)
-                    {
-                        keybd_event((byte)keyCode, 0, dwFlags, (UIntPtr)1);
-                        keybd_event(0, (byte)scanCode, dwFlags, (UIntPtr)1);
+                        if (buffer[0] != 1)
+                        {
+                            dwFlags = buffer[0];
+                            scanCode = keyConfigDialog.getScanCode(player, buffer[1]);
+                            keyCode = keyConfigDialog.getVirtualKey(player, buffer[1]);
+
+                            if (scanCode > 128)
+                                keybd_event((byte)keyCode, 0, dwFlags, (UIntPtr)1);
+                            else if (keyCode > 0)
+                                keybd_event((byte)keyCode, 0, dwFlags, (UIntPtr)1);
+
+                            if (scanCode > 0)
+                                keybd_event(0, (byte)scanCode, dwFlags, (UIntPtr)1);
+                        }
+                        else break;
                     }
-                    else
-                    {
-                        if ((int)keyCode > 0)
-                            keybd_event((byte)keyCode, 0, dwFlags, (UIntPtr)1);
-                        else if ((int)scanCode > 0)
-                            keybd_event(0, (byte)scanCode, dwFlags, (UIntPtr)1);
-                    }
+                    else break;
                 }
                 catch (Exception e)
                 {
