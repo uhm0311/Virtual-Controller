@@ -1,4 +1,4 @@
-﻿namespace VirtualController.GUI
+﻿namespace VirtualControllerServer.GUI
 {
     partial class KeyConfigDialog
     {
@@ -190,7 +190,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackgroundImage = global::VirtualController.Properties.Resources.컨트롤러_LR;
+            this.BackgroundImage = global::VirtualControllerServer.Properties.Resources.컨트롤러_LR;
             this.ClientSize = new System.Drawing.Size(959, 537);
             this.Controls.Add(this.btnCancle);
             this.Controls.Add(this.btnOK);

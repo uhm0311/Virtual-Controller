@@ -8,13 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace VirtualController.GUI
+namespace VirtualControllerServer.GUI
 {
-    public partial class QRCode : Form
+    public partial class ImageViewer : Form
     {
         private Bitmap QR;
 
-        public QRCode(Bitmap QR)
+        public ImageViewer(Bitmap QR)
         {
             InitializeComponent();
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VirtualController.Utils
+namespace VirtualControllerServer.Utils
 {
     public static class ByteConverter
     {

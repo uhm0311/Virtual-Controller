@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using BusinessRefinery.Barcode;
 
-namespace VirtualController.Utils
+namespace VirtualControllerServer.Utils
 {
     public static class QRCodeGenerator
     {

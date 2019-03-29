@@ -11,17 +11,18 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-using VirtualController.GUI;
-using VirtualController.Utils;
+using VirtualControllerServer.GUI;
+using VirtualControllerServer.Utils;
+using VirtualControllerServer.Utils.Keys;
 
-namespace VirtualController.Connections
+namespace VirtualControllerServer.Connections
 {
     public delegate void USBCheckListener(USBStatus status);
     public enum USBStatus { NoConnection, Ready, TooManyConnections };
 
     public class ConnectionManager : IDisposable
     {
-        private KeyConfigDialog keyConfigDialog;
+        private KeyConfigManager keyConfigManager;
         private USBCheckListener listener;
 
         private bool isWiFiRunning = false;
@@ -48,10 +49,10 @@ namespace VirtualController.Connections
         [DllImport("user32.dll")]
         private static extern int MapVirtualKey(int wCode, int wMapType);
 
-        public ConnectionManager(int port, KeyConfigDialog keyConfigDialog)
+        public ConnectionManager(int port, KeyConfigManager keyConfigManager)
         {
             this.port = port;
-            this.keyConfigDialog = keyConfigDialog;
+            this.keyConfigManager = keyConfigManager;
 
             for (int i = 1; i <= 4; i++)
             {
@@ -316,8 +317,8 @@ namespace VirtualController.Connections
                         if (buffer[0] != 1)
                         {
                             dwFlags = buffer[0];
-                            scanCode = keyConfigDialog.getScanCode(player, buffer[1]);
-                            keyCode = keyConfigDialog.getVirtualKey(player, buffer[1]);
+                            scanCode = keyConfigManager.getScanCode(player, (KeyCode)buffer[1]);
+                            keyCode = keyConfigManager.getVirtualKeyCode(player, (KeyCode)buffer[1]);
 
                             if (scanCode > 128)
                                 keybd_event((byte)keyCode, 0, dwFlags, (UIntPtr)1);

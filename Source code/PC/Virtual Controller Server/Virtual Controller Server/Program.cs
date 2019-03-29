@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace VirtualController
+namespace VirtualControllerServer
 {
     static class Program
     {
@@ -16,7 +16,7 @@ namespace VirtualController
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new GUI.VirtualControllerForm());
+            Application.Run(new GUI.MainForm());
         }
     }
 }

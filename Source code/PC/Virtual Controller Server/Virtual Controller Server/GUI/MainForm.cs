@@ -15,23 +15,24 @@ using System.Net.NetworkInformation;
 
 using System.Runtime.InteropServices;
 
-using VirtualController.Connections;
+using VirtualControllerServer.Connections;
 
 using BusinessRefinery.Barcode;
+using VirtualControllerServer.Utils.Keys;
 
 
-namespace VirtualController.GUI
+namespace VirtualControllerServer.GUI
 {
-    public partial class VirtualControllerForm : Form
+    public partial class MainForm : Form
     {
-        private KeyConfigDialog keyConfigDialog = new KeyConfigDialog();
-        private List<string> keyConfigNames = new List<string>();
+        private KeyConfigManager keyConfigManager = new KeyConfigManager();
+        private KeyConfigDialog keyConfigDialog = null;
 
-        private ConnectionManager manager;
+        private ConnectionManager connectionManager;
         private USBStatus usbStatus;
-        private GUI.QRCode QR = null;
+        private GUI.ImageViewer qrCode = null;
 
-        public VirtualControllerForm()
+        public MainForm()
         {
             InitializeComponent();
 
@@ -44,13 +45,15 @@ namespace VirtualController.GUI
         {
             maxPlayers.SelectedIndex = 2;
 
-            manager = new ConnectionManager(8731, keyConfigDialog);
-            manager.checkUSB(new USBCheckListener(checkUSBListen));
+            connectionManager = new ConnectionManager(8731, keyConfigManager);
+            connectionManager.checkUSB(new USBCheckListener(checkUSBListen));
+
+            keyConfigDialog = new KeyConfigDialog(keyConfigManager);
         }
 
         private void btnWiFi_Click(object sender, EventArgs e)
         {
-            if (manager.getWiFiRunning())
+            if (connectionManager.getWiFiRunning())
             {
                 if (MessageBox.Show("WiFi 연결을 중단하시겠습니까?", "WiFi 연결 중단", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                     stopWiFiConnection();
@@ -64,9 +67,9 @@ namespace VirtualController.GUI
 
         private void startWiFiConnection()
         {
-            manager.startWiFiConnection(int.Parse(maxPlayers.SelectedItem.ToString()));
+            connectionManager.startWiFiConnection(int.Parse(maxPlayers.SelectedItem.ToString()));
 
-            if (manager.getUSBRunning() || manager.getWiFiRunning())
+            if (connectionManager.getUSBRunning() || connectionManager.getWiFiRunning())
                 maxPlayers.Enabled = false;
             btnWiFi.Text = "WiFi 연결 중단";
 
@@ -79,31 +82,31 @@ namespace VirtualController.GUI
                     code.AppendLine(ipAddress.ToString());
             }
 
-            if (QR == null)
+            if (qrCode == null)
             {
-                QR = new QRCode(Utils.QRCodeGenerator.generate(code.ToString(), QRCodeECL.L));
-                QR.Show();
+                qrCode = new ImageViewer(Utils.QRCodeGenerator.generate(code.ToString(), QRCodeECL.L));
+                qrCode.Show();
             }
         }
 
         private void stopWiFiConnection()
         {
-            manager.stopWiFiConnection();
+            connectionManager.stopWiFiConnection();
 
-            if (!manager.getUSBRunning() && !manager.getWiFiRunning())
+            if (!connectionManager.getUSBRunning() && !connectionManager.getWiFiRunning())
                 maxPlayers.Enabled = true;
             btnWiFi.Text = "WiFi 연결 시작";
 
-            if (QR != null)
+            if (qrCode != null)
             {
-                QR.Close(); QR.Dispose();
-                QR = null;
+                qrCode.Close(); qrCode.Dispose();
+                qrCode = null;
             }
         }
 
         private void btnUSB_Click(object sender, EventArgs e)
         {
-            if (manager.getUSBRunning())
+            if (connectionManager.getUSBRunning())
             {
                 if (MessageBox.Show("USB 연결을 중단하시겠습니까?", "USB 연결 중단", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                     stopUSBConnection();
@@ -121,9 +124,9 @@ namespace VirtualController.GUI
         
         private void startUSBConnection()
         {
-            if (manager.startUSBConnection(int.Parse(maxPlayers.SelectedItem.ToString())))
+            if (connectionManager.startUSBConnection(int.Parse(maxPlayers.SelectedItem.ToString())))
             {
-                if (manager.getUSBRunning() || manager.getWiFiRunning())
+                if (connectionManager.getUSBRunning() || connectionManager.getWiFiRunning())
                     maxPlayers.Enabled = false;
                 btnUSB.Text = "USB 연결 중단";
             }
@@ -131,9 +134,9 @@ namespace VirtualController.GUI
 
         private void stopUSBConnection()
         {
-            manager.stopUSBConnection();
+            connectionManager.stopUSBConnection();
 
-            if (!manager.getUSBRunning() && !manager.getWiFiRunning())
+            if (!connectionManager.getUSBRunning() && !connectionManager.getWiFiRunning())
                 maxPlayers.Enabled = true;
             btnUSB.Text = "USB 연결 시작";
 
@@ -156,26 +159,26 @@ namespace VirtualController.GUI
 
         private void VirtualControllerForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (manager.getWiFiRunning())
+            if (connectionManager.getWiFiRunning())
             {
                 this.stopWiFiConnection();
-                manager.stopWiFiConnection();
+                connectionManager.stopWiFiConnection();
             }
 
-            if (manager.getUSBRunning())
+            if (connectionManager.getUSBRunning())
             {
                 this.stopUSBConnection();
-                manager.stopUSBConnection();
+                connectionManager.stopUSBConnection();
             }
-            manager.Dispose();
+            connectionManager.Dispose();
         }
 
         private void menuNew_Click(object sender, EventArgs e)
         {
             ToolStripMenuItem item = (ToolStripMenuItem)sender;
             int player = int.Parse(item.Name.Substring(item.Name.Length - 1));
-
             string configName = keyConfigDialog.createKeyConfig(player);
+
             if (configName.Length > 0)
             {
                 gpBoxKeyConfigs.Controls["chckBoxP" + player].Text = "Player" + player + " - 키 설정 \'" + configName + "\'";
@@ -189,7 +192,7 @@ namespace VirtualController.GUI
             int player = int.Parse(item.Name.Substring(item.Name.Length - 1));
             string configName = item.Text;
 
-            keyConfigDialog.loadKeyConfig(player, configName);
+            keyConfigDialog.loadKeyConfig(player,configName);
             gpBoxKeyConfigs.Controls["chckBoxP" + player].Text = "Player" + player + " - 키 설정 \'" + configName + "\'";
             ((CheckBox)gpBoxKeyConfigs.Controls["chckBoxP" + player]).Checked = true;
         }
@@ -209,7 +212,7 @@ namespace VirtualController.GUI
             {
                 ToolStripMenuItem item = (ToolStripMenuItem)sender;
                 int player = int.Parse(item.Name.Substring(item.Name.Length - 1));
-                string configName = keyConfigDialog.deleteKeyConfig(player, item.Text);
+                keyConfigDialog.deleteKeyConfig(player, item.Text);
 
                 ToolStripItemCollection dropdown = ((ToolStripMenuItem)menuKeyConfigK.DropDownItems["menuPlayer" + player]).DropDownItems;
 
@@ -221,19 +224,14 @@ namespace VirtualController.GUI
                 edit.Clear();
                 delete.Clear();
 
-                keyConfigNames.Clear();
-
-                if (configName.Length == 0)
-                {
-                    gpBoxKeyConfigs.Controls["chckBoxP" + player].Text = "Player" + player + " - 키 설정 없음";
-                    ((CheckBox)gpBoxKeyConfigs.Controls["chckBoxP" + player]).Checked = false;
-                }
+                gpBoxKeyConfigs.Controls["chckBoxP" + player].Text = "Player" + player + " - 키 설정 없음";
+                ((CheckBox)gpBoxKeyConfigs.Controls["chckBoxP" + player]).Checked = false;
             }
         }
 
         private void menuKeyConfigK_Click(object sender, EventArgs e)
         {
-            for (int i = 1; i <= 4; i++)
+            for (int i = KeyConfigManager.minPlayer; i <= KeyConfigManager.maxPlayer; i++)
             {
                 ToolStripItemCollection dropdown = ((ToolStripMenuItem)menuKeyConfigK.DropDownItems["menuPlayer" + i]).DropDownItems;
 
@@ -241,36 +239,28 @@ namespace VirtualController.GUI
                 ToolStripItemCollection edit = ((ToolStripMenuItem)dropdown["menuEditP" + i]).DropDownItems;
                 ToolStripItemCollection delete = ((ToolStripMenuItem)dropdown["menuDeleteP" + i]).DropDownItems;
 
-                List<ToolStripMenuItem> openItems = new List<ToolStripMenuItem>();
-                List<ToolStripMenuItem> editItems = new List<ToolStripMenuItem>();
-                List<ToolStripMenuItem> deleteItems = new List<ToolStripMenuItem>();
+                open.Clear();
+                edit.Clear();
+                delete.Clear();
 
-                string[] keyConfigs = keyConfigDialog.getKeyConfigs(i);
-                foreach (string keyConfig in keyConfigs)
+                string[] namesOfKeyConfigs = keyConfigManager.getNames(i);
+                foreach (string nameOfKeyConfig in namesOfKeyConfigs)
                 {
-                    if (!keyConfigNames.Contains(keyConfig))
-                    {
-                        ToolStripMenuItem openItem = new ToolStripMenuItem();
-                        ToolStripMenuItem editItem = new ToolStripMenuItem();
-                        ToolStripMenuItem deleteItem = new ToolStripMenuItem();
+                    ToolStripMenuItem openItem = new ToolStripMenuItem();
+                    ToolStripMenuItem editItem = new ToolStripMenuItem();
+                    ToolStripMenuItem deleteItem = new ToolStripMenuItem();
 
-                        openItem.Text = editItem.Text = deleteItem.Text = keyConfig;
-                        openItem.Name = editItem.Name = deleteItem.Name = "menu" + keyConfig + "P" + i;
+                    openItem.Text = editItem.Text = deleteItem.Text = nameOfKeyConfig;
+                    openItem.Name = editItem.Name = deleteItem.Name = "menu" + nameOfKeyConfig + "P" + i;
 
-                        openItem.Click += menuOpen_Click;
-                        editItem.Click += menuEdit_Click;
-                        deleteItem.Click += menuDelete_Click;
+                    openItem.Click += menuOpen_Click;
+                    editItem.Click += menuEdit_Click;
+                    deleteItem.Click += menuDelete_Click;
 
-                        openItems.Add(openItem);
-                        editItems.Add(editItem);
-                        deleteItems.Add(deleteItem);
-
-                        keyConfigNames.Add(keyConfig);
-                    }
+                    open.Add(openItem);
+                    edit.Add(editItem);
+                    delete.Add(deleteItem);
                 }
-                open.AddRange(openItems.ToArray());
-                edit.AddRange(editItems.ToArray());
-                delete.AddRange(deleteItems.ToArray());
             }
         }
     }

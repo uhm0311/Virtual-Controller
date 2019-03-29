@@ -1,6 +1,6 @@
-﻿namespace VirtualController.GUI
+﻿namespace VirtualControllerServer.GUI
 {
-    partial class QRCode
+    partial class ImageViewer
     {
         /// <summary>
         /// Required designer variable.

@@ -13,8 +13,8 @@ public enum KeyCode {
     B,
     C,
     D,
-    E,
-    F,
+    //E,
+    //F,
 
     L,
     R,

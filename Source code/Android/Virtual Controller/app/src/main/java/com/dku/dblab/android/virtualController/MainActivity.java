@@ -55,8 +55,8 @@ public class MainActivity extends Activity
 		//originalViewRects.put("E", new Rect(276, 632, 276 + 118, 632 + 118));
 		// originalViewRects.put("F", new Rect(276, 762, 276 + 118, 762 + 118));
 
-		originalViewRects.put("E", new Rect(0, 0, 0, 0));
-		originalViewRects.put("F", new Rect(0, 0, 0, 0));
+		//originalViewRects.put("E", new Rect(0, 0, 0, 0));
+		//originalViewRects.put("F", new Rect(0, 0, 0, 0));
 
 		originalViewRects.put("L", new Rect(400, 0, 437 + 103, 0 + 150));
 		originalViewRects.put("R", new Rect(400, 809, 437 + 103, 809 + 150));
