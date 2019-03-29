@@ -30,14 +30,17 @@ public class ConnectionManager {
 
     public void dispose()
     {
-        new Thread(new Runnable() {
+        Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                try { serverSocket.close(); } catch (Exception e) { }
-                try { socket.close(); } catch (Exception e) { }
                 try { os.close(); } catch (Exception e) { }
+                try { socket.close(); } catch (Exception e) { }
+                try { serverSocket.close(); } catch (Exception e) { }
             }
-        }).start();
+        });
+
+        t.start();
+        try { t.join(); } catch (Exception e) { }
     }
 
     public void startUSBConnection()
@@ -65,7 +68,8 @@ public class ConnectionManager {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    try { validate(new Socket(sc.nextLine(), clientPort)); } catch (Exception e) { }
+                    try { validate(new Socket(sc.nextLine(), clientPort)); }
+                    catch (Exception e) { }
                 }
             }).start();
         }
@@ -124,7 +128,7 @@ public class ConnectionManager {
                 {
                     if (!keyManager.getKeyState(keyCode).equals(keyState))
                     {
-                        keyManager.setKeyDown(keyCode);
+                        keyManager.setKeyState(keyCode, keyState);
                         os.write(new byte[] { (byte)keyState.ordinal(), (byte)keyCode.ordinal() });
                     }
                 }

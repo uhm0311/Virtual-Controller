@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -33,7 +34,7 @@ public class MainActivity extends Activity
 	private static final int originalWidth = 540;
 	private static final int originalHeight = 960;
 	
-	private static final HashMap<String, Rect> originalViewRects = new HashMap<String, Rect>();
+	private static final HashMap<String, Rect> originalViewRects = new HashMap<>();
 
 	static {
 		originalViewRects.put("Joystick", new Rect(169, 162, 169 + 200, 162 + 200));
@@ -60,11 +61,7 @@ public class MainActivity extends Activity
 	private double widthRatio;
 	private double heightRatio;
 
-	private ConnectionManager connectionManager = new ConnectionManager();;
-	private QRCodeReader qrReader;
-
-	private View.OnTouchListener onButtonTouchListener;
-	private JoystickMovedListener onJoystickMovedListener;
+	private ConnectionManager connectionManager = new ConnectionManager();
 
 	@SuppressWarnings("deprecation")
 	@SuppressLint("NewApi")
@@ -74,6 +71,7 @@ public class MainActivity extends Activity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		setTheme(android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		layout = (RelativeLayout) findViewById(R.id.main_layout);
 		
@@ -134,17 +132,18 @@ public class MainActivity extends Activity
         super.onDestroy();
     }
 
-	@SuppressWarnings("deprecation")
 	protected void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
-		IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+		if (data != null) {
+			IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
 
-		WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-		WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-		int ip = wifiInfo.getIpAddress();
+			WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+			WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+			int ip = wifiInfo.getIpAddress();
 
-		qrReader = new QRCodeReader(result, Formatter.formatIpAddress(ip));
-		connectionManager.startWiFiConnection(qrReader.toString());
+			QRCodeReader qrReader = new QRCodeReader(result, Formatter.formatIpAddress(ip));
+			connectionManager.startWiFiConnection(qrReader.toString());
+		}
 	}
 
 	private Button setOnButtonTouchListener(Button btn, final String viewName)
