@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ImageViewer));
             this.picboxQR = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.picboxQR)).BeginInit();
             this.SuspendLayout();
@@ -40,14 +41,15 @@
             this.picboxQR.TabIndex = 0;
             this.picboxQR.TabStop = false;
             // 
-            // QRCode
+            // ImageViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 262);
             this.Controls.Add(this.picboxQR);
-            this.Name = "QRCode";
-            this.Text = "QRCode";
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Name = "ImageViewer";
+            this.Text = "QR Code Viewer";
             this.Load += new System.EventHandler(this.QRCode_Load);
             ((System.ComponentModel.ISupportInitialize)(this.picboxQR)).EndInit();
             this.ResumeLayout(false);

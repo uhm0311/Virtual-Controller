@@ -28,7 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.menuKeyConfigK = new System.Windows.Forms.ToolStripMenuItem();
             this.menuPlayer1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuNewP1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -63,21 +64,21 @@
             this.chckBoxP3 = new System.Windows.Forms.CheckBox();
             this.chckBoxP2 = new System.Windows.Forms.CheckBox();
             this.chckBoxP1 = new System.Windows.Forms.CheckBox();
-            this.menuStrip1.SuspendLayout();
+            this.menuStrip.SuspendLayout();
             this.gpBoxWiFi.SuspendLayout();
             this.gpBoxKeyConfigs.SuspendLayout();
             this.SuspendLayout();
             // 
-            // menuStrip1
+            // menuStrip
             // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuKeyConfigK,
             this.menuHelpH});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(457, 24);
-            this.menuStrip1.TabIndex = 1;
-            this.menuStrip1.Text = "menuStrip1";
+            this.menuStrip.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip.Name = "menuStrip";
+            this.menuStrip.Size = new System.Drawing.Size(457, 24);
+            this.menuStrip.TabIndex = 1;
+            this.menuStrip.Text = "menuStrip1";
             // 
             // menuKeyConfigK
             // 
@@ -374,21 +375,22 @@
             this.chckBoxP1.Text = "Player1 - 키 설정 없음";
             this.chckBoxP1.UseVisualStyleBackColor = true;
             // 
-            // VirtualControllerForm
+            // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(457, 174);
             this.Controls.Add(this.gpBoxKeyConfigs);
             this.Controls.Add(this.gpBoxWiFi);
-            this.Controls.Add(this.menuStrip1);
-            this.MainMenuStrip = this.menuStrip1;
-            this.Name = "VirtualControllerForm";
+            this.Controls.Add(this.menuStrip);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MainMenuStrip = this.menuStrip;
+            this.Name = "MainForm";
             this.Text = "Virtual Controller";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.VirtualControllerForm_FormClosing);
             this.Load += new System.EventHandler(this.VirtualControllerForm_Load);
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.menuStrip.ResumeLayout(false);
+            this.menuStrip.PerformLayout();
             this.gpBoxWiFi.ResumeLayout(false);
             this.gpBoxWiFi.PerformLayout();
             this.gpBoxKeyConfigs.ResumeLayout(false);
@@ -400,7 +402,7 @@
 
         #endregion
 
-        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem menuHelpH;
         private System.Windows.Forms.ToolStripMenuItem menuHelpV;
         private System.Windows.Forms.ToolStripMenuItem menuInfoR;

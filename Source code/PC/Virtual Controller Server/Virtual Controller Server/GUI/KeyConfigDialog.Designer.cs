@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(KeyConfigDialog));
             this.txtL = new System.Windows.Forms.TextBox();
             this.txtR = new System.Windows.Forms.TextBox();
             this.txtUP = new System.Windows.Forms.TextBox();
@@ -206,6 +207,7 @@
             this.Controls.Add(this.txtUP);
             this.Controls.Add(this.txtR);
             this.Controls.Add(this.txtL);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "KeyConfigDialog";
             this.Text = "KeyConfigDialog";
             this.ResumeLayout(false);
