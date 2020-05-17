@@ -1,6 +1,5 @@
 /Documents
-
-
+*.xlsm
 
 # Created by https://www.gitignore.io/api/eclipse,visualstudio,androidstudio
 # Edit at https://www.gitignore.io/?templates=eclipse,visualstudio,androidstudio
@@ -136,6 +135,7 @@ fabric.properties
 !/gradle/wrapper/gradle-wrapper.jar
 
 ### Eclipse ###
+
 .metadata
 tmp/
 *.tmp
@@ -212,9 +212,6 @@ tmp/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-
-# Mono auto generated files
-mono_crash.*
 
 # Build results
 [Dd]ebug/
@@ -407,8 +404,6 @@ BundleArtifacts/
 Package.StoreAssociation.xml
 _pkginfo.txt
 *.appx
-*.appxbundle
-*.appxupload
 
 # Visual Studio cache files
 # files ending in .cache can be ignored
@@ -433,6 +428,8 @@ orleans.codegen.cs
 # Since there are multiple workflows, uncomment next line to ignore bower_components
 # (https://github.com/github/gitignore/pull/1529#issuecomment-104372622)
 #bower_components/
+# ASP.NET Core default setup: bower directory is configured as wwwroot/lib/ and bower restore is true
+**/wwwroot/lib/
 
 # RIA/Silverlight projects
 Generated_Code/
@@ -493,6 +490,10 @@ paket-files/
 # FAKE - F# Make
 .fake/
 
+# JetBrains Rider
+.idea/
+*.sln.iml
+
 # CodeRush personal settings
 .cr/personal
 
@@ -536,8 +537,5 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
-
-# Backup folder for Package Reference Convert tool in Visual Studio 2017
-MigrationBackup/
 
 # End of https://www.gitignore.io/api/eclipse,visualstudio,androidstudio
